@@ -2,19 +2,22 @@
 import './style.css';
 
 // DOM要素
-const createRoomBtn = document.getElementById('createRoom')!;
-const joinRoomBtn = document.getElementById('joinRoom')!;
-const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-const userNameInput = document.getElementById('userNameInput') as HTMLInputElement;
+const createRoomBtn = document.getElementById('createRoom');
+const joinRoomBtn = document.getElementById('joinRoom');
+const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement | null;
+const userNameInput = document.getElementById('userNameInput') as HTMLInputElement | null;
 
 // ロード時に名前復元
 window.addEventListener('load', () => {
-    const savedName = localStorage.getItem('opinion-board-user-name');
-    if (savedName) userNameInput.value = savedName;
+    if (userNameInput) {
+        const savedName = localStorage.getItem('opinion-board-user-name');
+        if (savedName) userNameInput.value = savedName;
+    }
 });
 
 // 名前保存
 function saveName(): string {
+    if (!userNameInput) return 'Guest';
     const name = userNameInput.value.trim() || 'Guest';
     localStorage.setItem('opinion-board-user-name', name);
     return name;
@@ -24,7 +27,7 @@ function saveName(): string {
 function handleCreateRoom(): void {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const clientId = getClientId();
-    const name = saveName();
+    const name = saveName(); // ここでsaveNameを呼ぶのは安全（関数内でチェック済み）
     const wsUrl = `${wsProtocol}//${window.location.host}/ws?clientId=${clientId}&name=${encodeURIComponent(name)}`;
     const ws = new WebSocket(wsUrl);
 
@@ -44,6 +47,7 @@ function handleCreateRoom(): void {
 
 // ルームに参加（ページ遷移のみ）
 function handleJoinRoom(): void {
+    if (!roomIdInput) return;
     const roomId = roomIdInput.value.trim().toUpperCase();
     if (!roomId) {
         alert('ルームIDを入力してください');
@@ -69,10 +73,16 @@ function getClientId(): string {
 }
 
 // イベントリスナー
-createRoomBtn.addEventListener('click', handleCreateRoom);
-joinRoomBtn.addEventListener('click', handleJoinRoom);
+if (createRoomBtn) {
+    createRoomBtn.addEventListener('click', handleCreateRoom);
+}
+if (joinRoomBtn) {
+    joinRoomBtn.addEventListener('click', handleJoinRoom);
+}
 
 // エンターキーで参加
-roomIdInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleJoinRoom();
-});
+if (roomIdInput) {
+    roomIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleJoinRoom();
+    });
+}
