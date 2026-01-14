@@ -175,7 +175,16 @@ body {
 
 .join-form {
   display: flex;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.join-form .input {
+  width: 100%;
+}
+
+.join-form .btn {
+  width: 100%;
 }
 
 .join-form .input {
