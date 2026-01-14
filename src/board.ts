@@ -138,38 +138,6 @@ function handleMessage(message: WSMessage): void {
             break;
 
         case 'opinion':
-            // ... (中略)
-
-            // ユーザーリスト更新
-            function updateUserListUI(): void {
-                if (!userListEl || !userCountEl) return;
-
-                userCountEl.textContent = String(users.length);
-                userListEl.innerHTML = '';
-
-                users.forEach(user => {
-                    const li = document.createElement('li');
-                    li.className = 'user-item';
-
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = user.name + (user.id === clientId ? ' (あなた)' : '');
-
-                    if (user.isOwner) {
-                        const crown = document.createElement('span');
-                        crown.textContent = '👑';
-                        crown.title = 'オーナー';
-                        crown.style.marginRight = '4px';
-                        li.appendChild(crown);
-                    }
-
-                    li.appendChild(nameSpan);
-                    userListEl.appendChild(li);
-                });
-            }
-
-            toggleUserListBtn.addEventListener('click', () => {
-                userListPanel.classList.toggle('hidden');
-            });
             const card = createOpinionCard(message.opinion, clientId);
             canvas.appendChild(card);
             break;
@@ -199,6 +167,38 @@ function handleMessage(message: WSMessage): void {
             break;
     }
 }
+
+// ユーザーリスト更新
+function updateUserListUI(): void {
+    if (!userListEl || !userCountEl) return;
+
+    userCountEl.textContent = String(users.length);
+    userListEl.innerHTML = '';
+
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.className = 'user-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = user.name + (user.id === clientId ? ' (あなた)' : '');
+
+        if (user.isOwner) {
+            const crown = document.createElement('span');
+            crown.textContent = '👑';
+            crown.title = 'オーナー';
+            crown.style.marginRight = '4px';
+            li.appendChild(crown);
+        }
+
+        li.appendChild(nameSpan);
+        userListEl.appendChild(li);
+    });
+}
+
+// トグルボタンイベントリスナー
+toggleUserListBtn.addEventListener('click', () => {
+    userListPanel.classList.toggle('hidden');
+});
 
 // エラー表示
 function showError(message: string): void {
