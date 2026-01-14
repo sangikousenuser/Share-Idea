@@ -812,6 +812,87 @@ body {
   font-size: 16px;
 }
 
+/* ==========================================
+   Reaction UI
+   ========================================== */
+.reaction-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.reaction-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+
+.reaction-badge:hover {
+  background: var(--bg-hover);
+  transform: scale(1.05);
+}
+
+.reaction-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reaction-add-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-style: solid;
+}
+
+/* Emoji Picker Popover */
+.emoji-picker-popover {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -100%);
+  /* Click位置の上に表示 */
+}
+
+.emoji-option {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.emoji-option:hover {
+  transform: scale(1.2);
+  background: var(--bg-hover);
+}
+
 /* セーフエリア対応（ノッチ付きiPhone） */
 @supports (padding: env(safe-area-inset-bottom)) {
   .input-bar {

@@ -10,6 +10,7 @@ export interface Opinion {
     y: number;
     votes: number;
     votedBy: Set<string>;
+    reactions: Map<string, Set<string>>; // emoji -> Set<userId>
     creatorId: string;  // 作成者ID
     createdAt: number;
 }
@@ -29,6 +30,7 @@ export type WSMessage =
     | { type: 'sync'; opinions: OpinionDTO[] }
     | { type: 'opinion'; opinion: OpinionDTO }
     | { type: 'vote'; opinionId: string; votes?: number }
+    | { type: 'reaction'; opinionId: string; emoji: string; count?: number }
     | { type: 'move'; opinionId: string; x: number; y: number }
     | { type: 'delete'; opinionId: string }
     | { type: 'deleted'; opinionId: string }
@@ -43,6 +45,7 @@ export interface OpinionDTO {
     x: number;
     y: number;
     votes: number;
+    reactions: { [emoji: string]: number };
     creatorId: string;
     createdAt: number;
 }
@@ -55,6 +58,9 @@ export function opinionToDTO(opinion: Opinion): OpinionDTO {
         x: opinion.x,
         y: opinion.y,
         votes: opinion.votes,
+        reactions: Object.fromEntries(
+            Array.from(opinion.reactions.entries()).map(([emoji, users]) => [emoji, users.size])
+        ),
         creatorId: opinion.creatorId,
         createdAt: opinion.createdAt
     };

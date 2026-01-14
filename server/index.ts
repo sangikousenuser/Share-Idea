@@ -148,6 +148,7 @@ wss.on('connection', (ws) => {
                         y: message.opinion.y,
                         votes: 0,
                         votedBy: new Set(),
+                        reactions: new Map(),
                         creatorId: clientId,
                         createdAt: Date.now()
                     };
@@ -178,6 +179,38 @@ wss.on('connection', (ws) => {
                             votes: opinion.votes
                         };
                         broadcast(currentRoom, voteMsg);
+                    }
+                    break;
+                }
+
+                case 'reaction': {
+                    if (!currentRoom) return;
+
+                    const opinion = currentRoom.opinions.get(message.opinionId);
+                    if (opinion) {
+                        let users = opinion.reactions.get(message.emoji);
+                        if (!users) {
+                            users = new Set();
+                            opinion.reactions.set(message.emoji, users);
+                        }
+
+                        // トグル動作
+                        if (users.has(clientId)) {
+                            users.delete(clientId);
+                        } else {
+                            users.add(clientId);
+                        }
+
+                        if (users.size === 0) {
+                            opinion.reactions.delete(message.emoji);
+                        }
+
+                        broadcast(currentRoom, {
+                            type: 'reaction',
+                            opinionId: opinion.id,
+                            emoji: message.emoji,
+                            count: users.size
+                        });
                     }
                     break;
                 }

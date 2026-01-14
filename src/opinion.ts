@@ -3,6 +3,7 @@
 import type { OpinionDTO } from './types';
 import { initDrag } from './drag';
 import { initVote } from './vote';
+import { createReactionContainer, addOrUpdateReactionBadge } from './reaction';
 import { parseMarkdown } from './markdown';
 
 // 削除コールバック（main.tsで設定）
@@ -63,6 +64,13 @@ export function createOpinionCard(opinion: OpinionDTO, clientId: string): HTMLEl
     </div>
   `;
 
+  // リアクションコンテナ追加
+  const footer = card.querySelector('.opinion-footer');
+  if (footer) {
+    const reactionContainer = createReactionContainer(opinion.id, opinion.reactions);
+    footer.appendChild(reactionContainer);
+  }
+
   // ドラッグ機能を初期化
   initDrag(card, opinion.id);
 
@@ -105,6 +113,16 @@ export function updateOpinionPosition(opinionId: string, x: number, y: number): 
 
   card.style.left = `${x}px`;
   card.style.top = `${y}px`;
+}
+
+export function updateOpinionReactions(opinionId: string, emoji: string, count: number): void {
+  const card = document.querySelector(`[data-id="${opinionId}"]`) as HTMLElement;
+  if (!card) return;
+
+  const container = card.querySelector('.reaction-container') as HTMLElement;
+  if (container) {
+    addOrUpdateReactionBadge(container, opinionId, emoji, count);
+  }
 }
 
 export function removeOpinionCard(opinionId: string): void {

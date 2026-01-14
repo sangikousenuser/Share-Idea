@@ -2,9 +2,10 @@
 
 import './style.css';
 import type { WSMessage, OpinionDTO } from './types';
-import { createOpinionCard, updateOpinionVotes, updateOpinionPosition, removeOpinionCard, setDeleteCallback } from './opinion';
+import { createOpinionCard, updateOpinionVotes, updateOpinionPosition, removeOpinionCard, setDeleteCallback, updateOpinionReactions } from './opinion';
 import { setMoveCallback } from './drag';
 import { setVoteCallback } from './vote';
+import { setReactionCallback } from './reaction';
 import { generateQRCode } from './qr';
 import { exportAsImage } from './export';
 
@@ -113,6 +114,10 @@ function handleMessage(message: WSMessage): void {
             updateOpinionVotes(message.opinionId, message.votes ?? 0);
             break;
 
+        case 'reaction':
+            updateOpinionReactions(message.opinionId, message.emoji, message.count ?? 0);
+            break;
+
         case 'move':
             updateOpinionPosition(message.opinionId, message.x, message.y);
             break;
@@ -166,6 +171,7 @@ function submitOpinion(): void {
         x,
         y,
         votes: 0,
+        reactions: {},
         creatorId: clientId,
         createdAt: Date.now()
     };
@@ -288,6 +294,11 @@ setMoveCallback((opinionId, x, y) => {
 // 投票コールバック設定
 setVoteCallback((opinionId) => {
     send({ type: 'vote', opinionId });
+});
+
+// リアクションコールバック設定
+setReactionCallback((opinionId, emoji) => {
+    send({ type: 'reaction', opinionId, emoji });
 });
 
 // 初期化
