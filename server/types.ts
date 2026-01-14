@@ -1,0 +1,56 @@
+// 共有型定義
+
+import type { WebSocket as WsWebSocket } from 'ws';
+
+export interface Opinion {
+    id: string;
+    text: string;
+    imageUrl?: string;
+    x: number;
+    y: number;
+    votes: number;
+    votedBy: Set<string>;
+    createdAt: number;
+}
+
+export interface Room {
+    id: string;
+    opinions: Map<string, Opinion>;
+    clients: Set<WsWebSocket>;
+    createdAt: number;
+    timeoutId?: NodeJS.Timeout;
+}
+
+// WebSocket メッセージ型
+export type WSMessage =
+    | { type: 'join'; roomId: string; clientId: string }
+    | { type: 'create'; clientId: string }
+    | { type: 'sync'; opinions: OpinionDTO[] }
+    | { type: 'opinion'; opinion: OpinionDTO }
+    | { type: 'vote'; opinionId: string; votes: number }
+    | { type: 'move'; opinionId: string; x: number; y: number }
+    | { type: 'error'; message: string }
+    | { type: 'joined'; roomId: string; opinions: OpinionDTO[] }
+    | { type: 'room_closing'; reason: string };
+
+export interface OpinionDTO {
+    id: string;
+    text: string;
+    imageUrl?: string;
+    x: number;
+    y: number;
+    votes: number;
+    createdAt: number;
+}
+
+export function opinionToDTO(opinion: Opinion): OpinionDTO {
+    return {
+        id: opinion.id,
+        text: opinion.text,
+        imageUrl: opinion.imageUrl,
+        x: opinion.x,
+        y: opinion.y,
+        votes: opinion.votes,
+        createdAt: opinion.createdAt
+    };
+}
