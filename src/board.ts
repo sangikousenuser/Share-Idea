@@ -118,19 +118,33 @@ function handleMessage(message: WSMessage): void {
             break;
 
         case 'error':
-            alert(message.message);
-            window.location.href = '/';
+            showError(message.message);
             break;
 
         case 'room_closing':
-            alert(message.reason);
-            window.location.href = '/';
+            showError(message.reason);
             break;
 
         case 'deleted':
             removeOpinionCard(message.opinionId);
             break;
     }
+}
+
+// エラー表示
+function showError(message: string): void {
+    canvas.innerHTML = `
+        <div class="error-container">
+            <h2>😵 接続エラー</h2>
+            <p>${message}</p>
+            <a href="/" class="btn btn-primary">トップへ戻る</a>
+        </div>
+    `;
+
+    // 入力を無効化
+    opinionInput.disabled = true;
+    (submitOpinionBtn as HTMLButtonElement).disabled = true;
+    (attachImageBtn as HTMLButtonElement).disabled = true;
 }
 
 // 意見送信
