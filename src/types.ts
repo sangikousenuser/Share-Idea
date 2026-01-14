@@ -16,7 +16,7 @@ export type WSMessage =
     | { type: 'create'; clientId: string }
     | { type: 'sync'; opinions: OpinionDTO[] }
     | { type: 'opinion'; opinion: OpinionDTO }
-    | { type: 'vote'; opinionId: string; votes: number }
+    | { type: 'vote'; opinionId: string; votes?: number }
     | { type: 'move'; opinionId: string; x: number; y: number }
     | { type: 'delete'; opinionId: string }
     | { type: 'deleted'; opinionId: string }

@@ -31,54 +31,9 @@
         </div>
       </div>
     </div>
-
-    <!-- ボード画面 -->
-    <div id="board" class="screen hidden">
-      <header class="board-header">
-        <div class="room-info">
-          <span class="room-label">Room</span>
-          <span id="roomIdDisplay" class="room-id"></span>
-        </div>
-        <div class="header-actions">
-          <button id="shareBtn" class="btn btn-icon" title="共有">📤</button>
-          <button id="exportBtn" class="btn btn-icon" title="画像出力">📷</button>
-          <button id="themeToggle" class="theme-toggle" title="テーマ切替">🌙</button>
-          <button id="leaveRoom" class="btn btn-ghost">退出</button>
-        </div>
-      </header>
-
-      <!-- 意見キャンバス -->
-      <div id="canvas" class="canvas"></div>
-
-      <!-- 意見入力フォーム -->
-      <div class="input-bar">
-        <button id="attachImage" class="btn btn-icon" title="画像添付">🖼️</button>
-        <input type="text" id="opinionInput" class="input input-opinion" placeholder="意見を入力..." maxlength="200" />
-        <button id="submitOpinion" class="btn btn-primary">送信</button>
-        <input type="file" id="imageInput" accept="image/*" hidden />
-      </div>
-
-      <!-- 画像プレビュー -->
-      <div id="imagePreview" class="image-preview hidden">
-        <img id="previewImg" src="" alt="preview" />
-        <button id="removeImage" class="btn btn-icon btn-small">✕</button>
-      </div>
-
-      <!-- 共有モーダル -->
-      <div id="shareModal" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-          <h2>ルームを共有</h2>
-          <div id="qrCode" class="qr-code"></div>
-          <p class="share-url" id="shareUrl"></p>
-          <button id="copyUrl" class="btn btn-secondary btn-full">URLをコピー</button>
-          <button id="closeModal" class="btn btn-ghost btn-full">閉じる</button>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <script type="module" src="/main.ts"></script>
+  <script type="module" src="/lobby.ts"></script>
 </body>
 
 </html>

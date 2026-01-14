@@ -14,7 +14,13 @@ export default defineConfig({
     },
     build: {
         outDir: '../dist',
-        emptyOutDir: true
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                main: resolve(__dirname, 'src/index.html'),
+                board: resolve(__dirname, 'src/board.html')
+            }
+        }
     },
     resolve: {
         alias: {

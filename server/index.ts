@@ -11,6 +11,11 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 // 本番用: 静的ファイル配信
 app.use(express.static(path.join(process.cwd(), 'dist')));
 
+// /board へのアクセスを board.html にルーティング
+app.get('/board', (_req, res) => {
+    res.sendFile(path.join(process.cwd(), 'dist', 'board.html'));
+});
+
 // ルーム管理
 const rooms = new Map<string, Room>();
 

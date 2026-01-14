@@ -1,6 +1,11 @@
 // 投票機能モジュール
 
-import { sendVote } from './main';
+// 投票コールバック（board.tsで設定）
+let voteCallback: ((opinionId: string) => void) | null = null;
+
+export function setVoteCallback(callback: (opinionId: string) => void): void {
+    voteCallback = callback;
+}
 
 const votedOpinions = new Set<string>();
 
@@ -15,7 +20,9 @@ export function initVote(btn: HTMLElement, opinionId: string, _clientId: string)
         btn.classList.add('voted');
 
         // サーバーに投票を送信
-        sendVote(opinionId);
+        if (voteCallback) {
+            voteCallback(opinionId);
+        }
     });
 
     // 既に投票済みならスタイル適用

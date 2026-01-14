@@ -1,6 +1,11 @@
 // ドラッグ機能モジュール
 
-import { sendMove } from './main';
+// 移動コールバック（board.tsで設定）
+let moveCallback: ((id: string, x: number, y: number) => void) | null = null;
+
+export function setMoveCallback(callback: (id: string, x: number, y: number) => void): void {
+    moveCallback = callback;
+}
 
 interface DragState {
     isDragging: boolean;
@@ -122,7 +127,9 @@ function endDrag(): void {
         // 位置をサーバーに送信
         const x = parseFloat(card.style.left) || 0;
         const y = parseFloat(card.style.top) || 0;
-        sendMove(state.cardId, x, y);
+        if (moveCallback) {
+            moveCallback(state.cardId, x, y);
+        }
     }
 
     state.isDragging = false;
