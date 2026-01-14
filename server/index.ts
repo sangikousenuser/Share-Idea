@@ -1,7 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
-import { Room, Opinion, WSMessage, opinionToDTO } from './types.js';
+import { Room, Opinion, WSMessage, opinionToDTO, ClientData, UserDTO } from './types.js';
 import path from 'path';
 
 const app = express();
@@ -39,11 +39,21 @@ function generateId(): string {
 }
 
 // ルームの全クライアントにブロードキャスト
-function broadcast(room: Room, message: WSMessage, exclude?: WebSocket) {
+function broadcast(room: Room, message: WSMessage) {
     const data = JSON.stringify(message);
     room.clients.forEach((client) => {
-        if (client !== exclude && client.readyState === WebSocket.OPEN) {
-            client.send(data);
+        if (client.ws.readyState === WebSocket.OPEN) {
+            client.ws.send(data);
+        }
+    });
+}
+
+// 自分以外にブロードキャスト
+function broadcastToOthers(room: Room, excludeClientId: string, message: WSMessage) {
+    const data = JSON.stringify(message);
+    room.clients.forEach((client) => {
+        if (client.id !== excludeClientId && client.ws.readyState === WebSocket.OPEN) {
+            client.ws.send(data);
         }
     });
 }
@@ -59,8 +69,8 @@ function deleteRoom(roomId: string, reason: string) {
 
     // 全接続を閉じる
     room.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.close();
+        if (client.ws.readyState === WebSocket.OPEN) {
+            client.ws.close();
         }
     });
 
@@ -81,9 +91,21 @@ function setRoomTimeout(room: Room) {
 }
 
 // WebSocket接続ハンドラ
-wss.on('connection', (ws) => {
-    let currentRoom: Room | null = null;
-    let clientId: string = '';
+wss.on('connection', (ws, req) => {
+    // URLからクエリパラメータ解析
+    const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const clientId = url.searchParams.get('clientId') || generateId();
+    const clientName = url.searchParams.get('name') || 'Guest';
+
+    // クライアントデータ初期化
+    const clientData: ClientData = {
+        ws,
+        id: clientId,
+        name: clientName,
+        roomId: ''
+    };
+
+    console.log(`Client connected: ${clientId} (${clientName})`);
 
     ws.on('message', (data: Buffer) => {
         try {
@@ -91,53 +113,75 @@ wss.on('connection', (ws) => {
 
             switch (message.type) {
                 case 'create': {
-                    clientId = message.clientId;
                     const roomId = generateRoomId();
                     const room: Room = {
                         id: roomId,
+                        ownerId: clientId,
                         opinions: new Map(),
-                        clients: new Set([ws]),
+                        clients: new Map(),
                         createdAt: Date.now()
                     };
+
+                    // 自分を追加
+                    clientData.roomId = roomId;
+                    room.clients.set(clientId, clientData);
                     rooms.set(roomId, room);
-                    currentRoom = room;
 
                     // 1時間タイムアウト設定
                     setRoomTimeout(room);
 
+                    const userDTO: UserDTO = { id: clientId, name: clientName, isOwner: true };
+
                     const response: WSMessage = {
                         type: 'joined',
                         roomId,
-                        opinions: []
+                        opinions: [],
+                        users: [userDTO]
                     };
                     ws.send(JSON.stringify(response));
-                    console.log(`Room created: ${roomId}`);
+                    console.log(`Room created: ${roomId} by ${clientId}`);
                     break;
                 }
 
                 case 'join': {
-                    clientId = message.clientId;
                     const room = rooms.get(message.roomId.toUpperCase());
                     if (!room) {
                         const error: WSMessage = { type: 'error', message: 'ルームが見つかりません' };
                         ws.send(JSON.stringify(error));
                         return;
                     }
-                    room.clients.add(ws);
-                    currentRoom = room;
+
+                    clientData.roomId = room.id;
+                    room.clients.set(clientId, clientData);
 
                     const opinions = Array.from(room.opinions.values()).map(opinionToDTO);
+                    const users = Array.from(room.clients.values()).map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        isOwner: c.id === room.ownerId
+                    }));
+
                     const response: WSMessage = {
                         type: 'joined',
                         roomId: room.id,
-                        opinions
+                        opinions,
+                        users
                     };
                     ws.send(JSON.stringify(response));
+
+                    // 他の参加者に通知
+                    const joinNotification: WSMessage = {
+                        type: 'user_joined',
+                        user: { id: clientId, name: clientName, isOwner: clientId === room.ownerId }
+                    };
+                    broadcastToOthers(room, clientId, joinNotification);
+
                     console.log(`Client joined room: ${room.id} (${room.clients.size} clients)`);
                     break;
                 }
 
                 case 'opinion': {
+                    const currentRoom = rooms.get(clientData.roomId);
                     if (!currentRoom) return;
 
                     const opinion: Opinion = {
@@ -163,6 +207,7 @@ wss.on('connection', (ws) => {
                 }
 
                 case 'vote': {
+                    const currentRoom = rooms.get(clientData.roomId);
                     if (!currentRoom) return;
 
                     const opinion = currentRoom.opinions.get(message.opinionId);
@@ -184,6 +229,7 @@ wss.on('connection', (ws) => {
                 }
 
                 case 'reaction': {
+                    const currentRoom = rooms.get(clientData.roomId);
                     if (!currentRoom) return;
 
                     const opinion = currentRoom.opinions.get(message.opinionId);
@@ -216,6 +262,7 @@ wss.on('connection', (ws) => {
                 }
 
                 case 'move': {
+                    const currentRoom = rooms.get(clientData.roomId);
                     if (!currentRoom) return;
 
                     const opinion = currentRoom.opinions.get(message.opinionId);
@@ -230,11 +277,13 @@ wss.on('connection', (ws) => {
                         x: opinion.x,
                         y: opinion.y
                     };
-                    broadcast(currentRoom, moveMsg, ws);
+                    // 送信者以外にブロードキャスト（自分はすでに動いているため）
+                    broadcastToOthers(currentRoom, clientData.id, moveMsg);
                     break;
                 }
 
                 case 'delete': {
+                    const currentRoom = rooms.get(clientData.roomId);
                     if (!currentRoom) return;
 
                     const opinion = currentRoom.opinions.get(message.opinionId);
@@ -263,19 +312,26 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
-        if (currentRoom) {
-            currentRoom.clients.delete(ws);
-            console.log(`Client disconnected from room: ${currentRoom.id} (${currentRoom.clients.size} remaining)`);
+        if (clientData.roomId) {
+            const currentRoom = rooms.get(clientData.roomId);
+            if (currentRoom) {
+                currentRoom.clients.delete(clientData.id);
+                console.log(`Client disconnected from room: ${currentRoom.id} (${currentRoom.clients.size} remaining)`);
 
-            // 全員退出したら5秒後に削除
-            if (currentRoom.clients.size === 0) {
-                const roomId = currentRoom.id;
-                setTimeout(() => {
-                    const room = rooms.get(roomId);
-                    if (room && room.clients.size === 0) {
-                        deleteRoom(roomId, '全員が退出しました');
-                    }
-                }, EMPTY_ROOM_DELAY_MS);
+                // 退出通知
+                const leaveMsg: WSMessage = { type: 'user_left', userId: clientData.id };
+                broadcast(currentRoom, leaveMsg);
+
+                // 全員退出したら5秒後に削除
+                if (currentRoom.clients.size === 0) {
+                    const roomId = currentRoom.id;
+                    setTimeout(() => {
+                        const room = rooms.get(roomId);
+                        if (room && room.clients.size === 0) {
+                            deleteRoom(roomId, '全員が退出しました');
+                        }
+                    }, EMPTY_ROOM_DELAY_MS);
+                }
             }
         }
     });

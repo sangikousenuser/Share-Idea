@@ -5,13 +5,28 @@ import './style.css';
 const createRoomBtn = document.getElementById('createRoom')!;
 const joinRoomBtn = document.getElementById('joinRoom')!;
 const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+const userNameInput = document.getElementById('userNameInput') as HTMLInputElement;
+
+// ロード時に名前復元
+window.addEventListener('load', () => {
+    const savedName = localStorage.getItem('opinion-board-user-name');
+    if (savedName) userNameInput.value = savedName;
+});
+
+// 名前保存
+function saveName(): string {
+    const name = userNameInput.value.trim() || 'Guest';
+    localStorage.setItem('opinion-board-user-name', name);
+    return name;
+}
 
 // サーバーとWebSocket接続してルームを作成
 function handleCreateRoom(): void {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
     const clientId = getClientId();
+    const name = saveName();
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws?clientId=${clientId}&name=${encodeURIComponent(name)}`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
         // 作成リクエスト送信
@@ -38,6 +53,8 @@ function handleJoinRoom(): void {
         alert('ルームIDは6文字です');
         return;
     }
+
+    saveName();
     // ボードページへ遷移（実際の参加処理はボードページで行う）
     window.location.href = `/board.html?room=${roomId}`;
 }

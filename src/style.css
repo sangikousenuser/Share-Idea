@@ -812,6 +812,46 @@ body {
   font-size: 16px;
 }
 
+/* User List Panel */
+.user-list-panel {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  width: 240px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 900;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.user-list-panel.hidden {
+  display: none;
+}
+
+.user-list-panel h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+#userList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
 /* ==========================================
    Reaction UI
    ========================================== */

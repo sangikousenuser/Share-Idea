@@ -17,8 +17,9 @@ export interface Opinion {
 
 export interface Room {
     id: string;
+    ownerId: string;
     opinions: Map<string, Opinion>;
-    clients: Set<WsWebSocket>;
+    clients: Map<string, ClientData>; // clientId -> ClientData
     createdAt: number;
     timeoutId?: NodeJS.Timeout;
 }
@@ -35,8 +36,24 @@ export type WSMessage =
     | { type: 'delete'; opinionId: string }
     | { type: 'deleted'; opinionId: string }
     | { type: 'error'; message: string }
-    | { type: 'joined'; roomId: string; opinions: OpinionDTO[] }
+    | { type: 'joined'; roomId: string; opinions: OpinionDTO[]; users: UserDTO[] }
+    | { type: 'user_joined'; user: UserDTO }
+    | { type: 'user_left'; userId: string }
+    | { type: 'sync_users'; users: UserDTO[] }
     | { type: 'room_closing'; reason: string };
+
+export interface UserDTO {
+    id: string;
+    name: string;
+    isOwner: boolean;
+}
+
+export interface ClientData {
+    ws: WsWebSocket;
+    id: string;
+    name: string;
+    roomId: string;
+}
 
 export interface OpinionDTO {
     id: string;

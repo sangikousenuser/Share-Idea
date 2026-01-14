@@ -1,7 +1,7 @@
 // ボード画面用エントリーポイント
 
 import './style.css';
-import type { WSMessage, OpinionDTO } from './types';
+import type { WSMessage, OpinionDTO, UserDTO } from './types';
 import { createOpinionCard, updateOpinionVotes, updateOpinionPosition, removeOpinionCard, setDeleteCallback, updateOpinionReactions } from './opinion';
 import { setMoveCallback } from './drag';
 import { setVoteCallback } from './vote';
@@ -14,6 +14,7 @@ let ws: WebSocket | null = null;
 let clientId: string = getClientId();
 let currentRoomId: string | null = null;
 let pendingImageUrl: string | null = null;
+let users: UserDTO[] = [];
 
 // DOM要素
 const roomIdDisplay = document.getElementById('roomIdDisplay')!;
@@ -33,6 +34,11 @@ const imageInput = document.getElementById('imageInput') as HTMLInputElement;
 const imagePreview = document.getElementById('imagePreview')!;
 const previewImg = document.getElementById('previewImg') as HTMLImageElement;
 const removeImageBtn = document.getElementById('removeImage')!;
+const userListPanel = document.getElementById('userListPanel')!;
+const userListEl = document.getElementById('userList')!;
+const toggleUserListBtn = document.getElementById('toggleUserList')!;
+const userCountEl = document.getElementById('userCount')!;
+
 
 // クライアントID取得
 function getClientId(): string {
@@ -41,6 +47,11 @@ function getClientId(): string {
     const id = Math.random().toString(36).substring(2, 15);
     localStorage.setItem('opinion-board-client-id', id);
     return id;
+}
+
+// 名前取得
+function getUserName(): string {
+    return localStorage.getItem('opinion-board-user-name') || 'Guest';
 }
 
 // URLパラメータからルームIDを取得して参加
@@ -62,7 +73,8 @@ function joinRoomFromUrl(): void {
 // WebSocket接続
 function connectWebSocket(roomId: string): void {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const name = getUserName();
+    const wsUrl = `${protocol}//${window.location.host}/ws?clientId=${clientId}&name=${encodeURIComponent(name)}`;
 
     ws = new WebSocket(wsUrl);
 
@@ -98,6 +110,11 @@ function send(message: WSMessage): void {
 function handleMessage(message: WSMessage): void {
     switch (message.type) {
         case 'joined':
+            // ユーザーリスト更新
+            if (message.users) {
+                users = message.users;
+                updateUserListUI();
+            }
             // 既存の意見を表示
             message.opinions.forEach((opinion) => {
                 const card = createOpinionCard(opinion, clientId);
@@ -105,7 +122,54 @@ function handleMessage(message: WSMessage): void {
             });
             break;
 
+        case 'user_joined':
+            users.push(message.user);
+            updateUserListUI();
+            break;
+
+        case 'user_left':
+            users = users.filter(u => u.id !== message.userId);
+            updateUserListUI();
+            break;
+
+        case 'sync_users':
+            users = message.users;
+            updateUserListUI();
+            break;
+
         case 'opinion':
+            // ... (中略)
+
+            // ユーザーリスト更新
+            function updateUserListUI(): void {
+                if (!userListEl || !userCountEl) return;
+
+                userCountEl.textContent = String(users.length);
+                userListEl.innerHTML = '';
+
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.className = 'user-item';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = user.name + (user.id === clientId ? ' (あなた)' : '');
+
+                    if (user.isOwner) {
+                        const crown = document.createElement('span');
+                        crown.textContent = '👑';
+                        crown.title = 'オーナー';
+                        crown.style.marginRight = '4px';
+                        li.appendChild(crown);
+                    }
+
+                    li.appendChild(nameSpan);
+                    userListEl.appendChild(li);
+                });
+            }
+
+            toggleUserListBtn.addEventListener('click', () => {
+                userListPanel.classList.toggle('hidden');
+            });
             const card = createOpinionCard(message.opinion, clientId);
             canvas.appendChild(card);
             break;
