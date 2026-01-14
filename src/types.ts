@@ -7,6 +7,7 @@ export interface OpinionDTO {
     x: number;
     y: number;
     votes: number;
+    creatorId: string;
     createdAt: number;
 }
 
@@ -17,6 +18,8 @@ export type WSMessage =
     | { type: 'opinion'; opinion: OpinionDTO }
     | { type: 'vote'; opinionId: string; votes: number }
     | { type: 'move'; opinionId: string; x: number; y: number }
+    | { type: 'delete'; opinionId: string }
+    | { type: 'deleted'; opinionId: string }
     | { type: 'error'; message: string }
     | { type: 'joined'; roomId: string; opinions: OpinionDTO[] }
     | { type: 'room_closing'; reason: string };

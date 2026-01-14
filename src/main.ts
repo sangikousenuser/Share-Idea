@@ -2,7 +2,7 @@
 
 import './style.css';
 import type { WSMessage, OpinionDTO } from './types';
-import { createOpinionCard, updateOpinionVotes, updateOpinionPosition } from './opinion';
+import { createOpinionCard, updateOpinionVotes, updateOpinionPosition, removeOpinionCard, setDeleteCallback } from './opinion';
 import { generateQRCode } from './qr';
 import { exportAsImage } from './export';
 
@@ -117,6 +117,10 @@ function handleMessage(message: WSMessage): void {
             alert(message.reason);
             leaveRoom();
             break;
+
+        case 'deleted':
+            removeOpinionCard(message.opinionId);
+            break;
     }
 }
 
@@ -176,6 +180,7 @@ function submitOpinion(): void {
         x,
         y,
         votes: 0,
+        creatorId: clientId,
         createdAt: Date.now()
     };
 
@@ -339,3 +344,8 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 // 初期化
 initTheme();
 checkUrlParams();
+
+// 削除コールバック設定
+setDeleteCallback((opinionId: string) => {
+    send({ type: 'delete', opinionId });
+});

@@ -10,6 +10,7 @@ export interface Opinion {
     y: number;
     votes: number;
     votedBy: Set<string>;
+    creatorId: string;  // 作成者ID
     createdAt: number;
 }
 
@@ -29,6 +30,8 @@ export type WSMessage =
     | { type: 'opinion'; opinion: OpinionDTO }
     | { type: 'vote'; opinionId: string; votes: number }
     | { type: 'move'; opinionId: string; x: number; y: number }
+    | { type: 'delete'; opinionId: string }
+    | { type: 'deleted'; opinionId: string }
     | { type: 'error'; message: string }
     | { type: 'joined'; roomId: string; opinions: OpinionDTO[] }
     | { type: 'room_closing'; reason: string };
@@ -40,6 +43,7 @@ export interface OpinionDTO {
     x: number;
     y: number;
     votes: number;
+    creatorId: string;
     createdAt: number;
 }
 
@@ -51,6 +55,7 @@ export function opinionToDTO(opinion: Opinion): OpinionDTO {
         x: opinion.x,
         y: opinion.y,
         votes: opinion.votes,
+        creatorId: opinion.creatorId,
         createdAt: opinion.createdAt
     };
 }

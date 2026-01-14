@@ -143,6 +143,7 @@ wss.on('connection', (ws) => {
                         y: message.opinion.y,
                         votes: 0,
                         votedBy: new Set(),
+                        creatorId: clientId,
                         createdAt: Date.now()
                     };
                     currentRoom.opinions.set(opinion.id, opinion);
@@ -192,6 +193,29 @@ wss.on('connection', (ws) => {
                         y: opinion.y
                     };
                     broadcast(currentRoom, moveMsg, ws);
+                    break;
+                }
+
+                case 'delete': {
+                    if (!currentRoom) return;
+
+                    const opinion = currentRoom.opinions.get(message.opinionId);
+                    if (!opinion) return;
+
+                    // 作成者のみ削除可能
+                    if (opinion.creatorId !== clientId) {
+                        const error: WSMessage = { type: 'error', message: '自分の意見のみ削除できます' };
+                        ws.send(JSON.stringify(error));
+                        return;
+                    }
+
+                    currentRoom.opinions.delete(message.opinionId);
+
+                    const deleteMsg: WSMessage = {
+                        type: 'deleted',
+                        opinionId: message.opinionId
+                    };
+                    broadcast(currentRoom, deleteMsg);
                     break;
                 }
             }

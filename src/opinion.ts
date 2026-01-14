@@ -5,11 +5,18 @@ import { initDrag } from './drag';
 import { initVote } from './vote';
 import { parseMarkdown } from './markdown';
 
-// 投票数に応じたスケール計算（1.0〜2.0）
+// 削除コールバック（main.tsで設定）
+let deleteCallback: ((opinionId: string) => void) | null = null;
+
+export function setDeleteCallback(callback: (opinionId: string) => void): void {
+  deleteCallback = callback;
+}
+
+// 投票数に応じたスケール計算（1.0〜1.5）
 function calculateScale(votes: number): number {
   const baseScale = 1.0;
-  const scalePerVote = 0.08;
-  const maxScale = 2.0;
+  const scalePerVote = 0.05;
+  const maxScale = 1.5;
 
   return Math.min(baseScale + votes * scalePerVote, maxScale);
 }
@@ -26,6 +33,9 @@ export function createOpinionCard(opinion: OpinionDTO, clientId: string): HTMLEl
   card.style.transform = `scale(${scale})`;
   card.style.transformOrigin = 'top left';
 
+  // 自分の投稿か判定
+  const isOwner = opinion.creatorId === clientId;
+
   // 画像があれば表示
   const imageHtml = opinion.imageUrl
     ? `<img class="opinion-image" src="${opinion.imageUrl}" alt="添付画像" />`
@@ -36,7 +46,13 @@ export function createOpinionCard(opinion: OpinionDTO, clientId: string): HTMLEl
     ? `<div class="opinion-text">${parseMarkdown(opinion.text)}</div>`
     : '';
 
+  // 削除ボタン（作成者のみ表示）
+  const deleteHtml = isOwner
+    ? `<button class="delete-btn" data-opinion-id="${opinion.id}" title="削除">🗑️</button>`
+    : '';
+
   card.innerHTML = `
+    ${deleteHtml}
     ${imageHtml}
     ${textHtml}
     <div class="opinion-footer">
@@ -53,6 +69,17 @@ export function createOpinionCard(opinion: OpinionDTO, clientId: string): HTMLEl
   // 投票機能を初期化
   const voteBtn = card.querySelector('.vote-btn') as HTMLElement;
   initVote(voteBtn, opinion.id, clientId);
+
+  // 削除ボタンのイベント
+  const deleteBtn = card.querySelector('.delete-btn') as HTMLElement;
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (deleteCallback && confirm('この意見を削除しますか？')) {
+        deleteCallback(opinion.id);
+      }
+    });
+  }
 
   return card;
 }
@@ -78,4 +105,11 @@ export function updateOpinionPosition(opinionId: string, x: number, y: number): 
 
   card.style.left = `${x}px`;
   card.style.top = `${y}px`;
+}
+
+export function removeOpinionCard(opinionId: string): void {
+  const card = document.querySelector(`[data-id="${opinionId}"]`);
+  if (card) {
+    card.remove();
+  }
 }
